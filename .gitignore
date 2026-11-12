@@ -1,0 +1,35 @@
+.env
+.streamlit/secrets.toml
+.venv/
+__pycache__/
+*.pyc
+
+# Local credentials, backups and key material
+.env.*
+!.env.example
+.envrc
+secrets.toml
+secrets*.json
+credentials*.json
+*service-account*.json
+api_keys.*
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+id_rsa*
+id_ed25519*
+.aws/
+.ssh/
+.netrc
+_netrc
+
+# Local environments, editors and generated data
+venv/
+.idea/
+.vscode/
+.pytest_cache/
+.streamlit/secrets.toml.*
+*.log
+product_research_trace*.json
