@@ -1,9 +1,10 @@
 """Run with: python -m streamlit run app.py"""
 import json
+from uuid import uuid4
 
 import streamlit as st
 
-from agent import MAX_ITERATIONS, research_product
+from agent import MAX_ITERATIONS, research_steps
 from config import load_settings
 from services import ResearchModel, WebSearch
 
@@ -16,7 +17,20 @@ with st.form('research_form'):
     product = st.text_input('Product name', max_chars=200, placeholder='e.g. Sony WH-1000XM5')
     submitted = st.form_submit_button('Research Product')
 
+def advance(steps, decision=None):
+    with st.spinner('Researching product and recording the execution trace...'):
+        try:
+            url = next(steps) if decision is None else steps.send(decision)
+        except StopIteration as done:
+            st.session_state.report = done.value
+            return
+        st.session_state.pending_read = (uuid4().hex, steps, url)
+
+
 if submitted:
+    previous = st.session_state.pop('pending_read', None)
+    if previous:
+        previous[1].close()
     st.session_state.pop('report', None)
     if not product.strip():
         st.warning('Please enter a product name.')
@@ -27,13 +41,25 @@ if submitted:
             except FileNotFoundError:
                 secrets = {}
             settings = load_settings(secrets)
-            with st.spinner('Researching product and recording the execution trace...'):
-                st.session_state.report = research_product(
-                    product, ResearchModel(settings['GROQ_API_KEY'], settings['GROQ_MODEL']),
-                    WebSearch(settings['TAVILY_API_KEY']),
-                )
+            advance(research_steps(product, ResearchModel(settings['GROQ_API_KEY'], settings['GROQ_MODEL']),
+                                   WebSearch(settings['TAVILY_API_KEY'])))
         except ValueError as exc:
             st.error(str(exc))
+
+def resolve_pending(token, approved):
+    pending = st.session_state.get('pending_read')
+    if pending and pending[0] == token:
+        st.session_state.pop('pending_read')
+        advance(pending[1], approved)
+
+
+if 'pending_read' in st.session_state:
+    token, _, url = st.session_state.pending_read
+    st.subheader('Approve webpage read')
+    st.write('The agent proposes read_webpage with these arguments. Approve once to fetch this URL, or skip to continue without fetching it.')
+    st.code(json.dumps({'url': url}, ensure_ascii=False), language='json')
+    st.button('Approve this read', key='approve_' + token, on_click=resolve_pending, args=(token, True))
+    st.button('Skip this read', key='skip_' + token, on_click=resolve_pending, args=(token, False))
 
 if 'report' in st.session_state:
     report = st.session_state.report

@@ -28,7 +28,8 @@ def validate_answer(answer, sources):
     return {key: answer[key] for key in (*SECTIONS, 'limitations')}
 
 
-def research_product(product, model, search):
+def research_steps(product, model, search):
+    """Yield one exact read URL before execution; only literal True authorizes it."""
     product = product.strip()
     trace, history, sources = [], [], []
     started = datetime.now(timezone.utc).isoformat()
@@ -63,7 +64,8 @@ def research_product(product, model, search):
             'read_webpage': 'Agent chose to read a previously retrieved source.',
             'finish_research': 'Agent chose to submit its research.',
         }.get(action, 'Agent returned an unsupported action.'))
-        log('tool_call', iteration, tool=action, arguments=args)
+        if action != 'read_webpage':
+            log('tool_call', iteration, tool=action, arguments=args)
 
         if action == 'finish_research':
             try:
@@ -75,11 +77,23 @@ def research_product(product, model, search):
                 reason = 'completed' if any(answer[s] for s in SECTIONS) else 'insufficient_evidence'
                 return finish(answer, reason, iteration)
         elif action == 'read_webpage':
-            try:
-                page = read_webpage(args.get('url') if isinstance(args, dict) else None, sources)
-                observation = {'status': 'ok', **page}
-            except ServiceError as exc:
-                observation = {'status': 'read_failed', 'error': str(exc)}
+            url = args.get('url') if isinstance(args, dict) else None
+            if (not isinstance(url, str) or set(args) != {'url'}
+                    or not any(s['url'] == url for s in sources)):
+                observation = {'status': 'read_failed', 'error': 'Choose an exact Tavily result URL.'}
+            else:
+                log('approval_requested', iteration, tool=action, arguments={'url': url})
+                approved = (yield url) is True
+                log('approval_decision', iteration, tool=action, arguments={'url': url}, approved=approved)
+                if not approved:
+                    observation = {'status': 'read_skipped', 'error': 'Page read was not approved.'}
+                else:
+                    log('tool_call', iteration, tool=action, arguments={'url': url})
+                    try:
+                        page = read_webpage(url, sources)
+                        observation = {'status': 'ok', **page}
+                    except ServiceError as exc:
+                        observation = {'status': 'read_failed', 'error': str(exc)}
         elif action == 'web_search':
             query = args.get('query') if isinstance(args, dict) else None
             if not isinstance(query, str) or not query.strip() or len(query) > 500:
@@ -106,3 +120,14 @@ def research_product(product, model, search):
     return finish(incomplete(f'The {MAX_ITERATIONS}-iteration limit was reached before an acceptable '
                              'final report. Retrieved excerpts remain available below.'),
                   'iteration_limit', MAX_ITERATIONS)
+
+
+def research_product(product, model, search, approve_read=None):
+    """Non-UI callers skip reads unless their human approval callback confirms."""
+    steps = research_steps(product, model, search)
+    try:
+        url = next(steps)
+        while True:
+            url = steps.send(approve_read(url) if approve_read else False)
+    except StopIteration as done:
+        return done.value

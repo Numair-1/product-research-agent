@@ -131,7 +131,7 @@ class ReaderTests(unittest.TestCase):
         model.decide.side_effect = [('web_search', {'query': 'weight'}),
                                     ('read_webpage', {'url': URL + '/other'}),
                                     ('read_webpage', {'url': URL}), ('finish_research', answer)]
-        report = research_product('Fixture', model, search)
+        report = research_product('Fixture', model, search, approve_read=lambda url: url == URL)
         self.assertEqual(report['stopping_reason'], 'completed')
         self.assertEqual(report['iterations'], 4)
         observations = [e['observation'] for e in report['trace'] if e['event'] == 'tool_observation']

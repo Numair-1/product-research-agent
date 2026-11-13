@@ -1,0 +1,80 @@
+[
+  {
+    "id": "blank",
+    "input": "   ",
+    "expected": "Reject blank input before network calls.",
+    "kind": "input_edge",
+    "reference": "agent.py: research_product input validation"
+  },
+  {
+    "id": "too-long",
+    "input": "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "expected": "Reject a 201-character input before network calls.",
+    "kind": "input_edge",
+    "reference": "agent.py: research_product input validation"
+  },
+  {
+    "id": "pico",
+    "input": "Raspberry Pi Pico (original, not Pico 2): identify its microcontroller.",
+    "expected": "RP2040",
+    "kind": "research",
+    "pattern": "\\brp\\s?2040\\b",
+    "reference": "https://www.raspberrypi.com/products/raspberry-pi-pico/"
+  },
+  {
+    "id": "pico2",
+    "input": "Raspberry Pi Pico 2 (non-W): identify its microcontroller.",
+    "expected": "RP2350",
+    "kind": "research",
+    "pattern": "\\brp\\s?2350\\w?\\b",
+    "reference": "https://www.raspberrypi.com/products/raspberry-pi-pico-2/"
+  },
+  {
+    "id": "zero-w",
+    "input": "Raspberry Pi Zero W (original, not Zero 2 W): how much RAM is onboard?",
+    "expected": "512 MB",
+    "kind": "research",
+    "pattern": "\\b512\\s*(?:mb|mib|megabytes?)\\b",
+    "reference": "https://www.raspberrypi.com/products/raspberry-pi-zero-w/"
+  },
+  {
+    "id": "uno",
+    "input": "Arduino UNO Rev3 (not Rev4): identify the main microcontroller.",
+    "expected": "ATmega328P",
+    "kind": "research",
+    "pattern": "\\batmega\\s?328p\\b",
+    "reference": "https://docs.arduino.cc/hardware/uno-rev3/"
+  },
+  {
+    "id": "mega",
+    "input": "Arduino Mega 2560 Rev3: identify the main microcontroller.",
+    "expected": "ATmega2560",
+    "kind": "research",
+    "pattern": "\\batmega\\s?2560\\b",
+    "reference": "https://docs.arduino.cc/hardware/mega-2560/"
+  },
+  {
+    "id": "leonardo",
+    "input": "Arduino Leonardo: identify the main microcontroller.",
+    "expected": "ATmega32U4",
+    "kind": "research",
+    "pattern": "\\batmega\\s?32u4\\b",
+    "reference": "https://docs.arduino.cc/hardware/leonardo/"
+  },
+  {
+    "id": "xm5",
+    "input": "Sony WH-1000XM5: maximum AAC music playback time with noise cancelling on?",
+    "expected": "30 hours",
+    "kind": "research",
+    "pattern": "\\b30\\s*[-–]?\\s*(?:h|hr|hrs|hours?)\\b",
+    "reference": "https://helpguide.sony.net/mdr/wh1000xm5/v1/en/contents/TP1000534508.html"
+  },
+  {
+    "id": "m185",
+    "input": "Logitech M185 wireless mouse: what receiver connects it to the computer?",
+    "expected": "USB receiver",
+    "kind": "research",
+    "pattern": "(?:\\busb\\b.{0,50}\\b(?:receiver|dongle)\\b|\\b(?:receiver|dongle)\\b.{0,50}\\busb\\b)",
+    "reference": "https://www.logitech.com/en-us/shop/p/m185-wireless-mouse"
+  }
+]
